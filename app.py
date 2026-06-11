@@ -14,17 +14,28 @@
 from flask import Flask, request, render_template
 import numpy as np
 import tensorflow as tf
+from PIL import Image 
 app = Flask(__name__)
+model = tf.keras.models.load_model("grassmodel.h5")
 
 @app.route("/predict/", methods=["POST"])
 def predict():
-    # data = np.array(request.json["data"])
-    image = request.files.get("imagefile")
-    img_array = tf.keras.utils.img_to_array(image)
-    img_array = np.expand_dims(img_array, axis=0)
+    from PIL import Image
+
+    image = request.files["imagefile"] 
+    if image:
+        img_array = tf.keras.utils.img_to_array(image)
+
     processed_img = img_array / 255.0
-    predictions=model.predict(processed_img)
-    return {"data": "we are obsidian man"}
+    img = Image.open(image.stream)  
+    img = img.resize((64, 64))
+
+    img_array = np.array(img)
+    img_array = np.expand_dims(img_array, axis=0) / 255.0
+    predictions = model.predict(processed_img)
+    return {"data": predictions.tolist()}
+
+
 
 @app.route("/tester/")
 def tester():
